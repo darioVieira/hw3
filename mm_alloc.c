@@ -16,35 +16,26 @@ void* mm_malloc(size_t size)//recieves size of memory to be allocated
 {
 	void* ptr;
   static bool first = true;//to maintain the value
-	printf("a0..\n");
   if (size == 0)//catch 
     return (NULL);
-  printf("a1..\n");
   ptr = findBlock(size);
-  printf("a2..\n");
   if (ptr != NULL)// found an element that fits size
   {
-  	printf("a3..\n");
     reInitList();
     return (ptr);
   }
-  printf("a4..\n");
   ptr = sbrk(size);//if not... create a new element in the list
   if (ptr == (void *)-1)//if no such size exists... force quit like edge after a few tabs
   {
     printf("Error : sbrk() failed\n");
     return (NULL);
   }
-  printf("a5..\n");
   if (first)//first time mm_alloc has been called
   {
     list = NULL;
-    printf("a6..\n");
     first=false;
   }
-  printf("a7..\n");
   putInList(&list, size, ptr);
-  printf("a8..\n");
   return (ptr);
 }
 
@@ -145,18 +136,15 @@ void mm_free(void* ptr)
 
 void putInList(t_block **tempList, size_t size, void *ptr)
 {
-	printf("b0..\n");
   t_block *tmp= sbrk(sizeof(*tmp));
   if (tmp == (void *)-1)//catch sbrk failure
   {
     printf("Error : sbrk() failed\n");
     return ;
   }
-  printf("b1..\n");
   tmp->size = size;
   tmp->free = false;
   tmp->ptr = ptr;
-  printf("b2..\n");
   if (*tempList == NULL)
   {
   	
@@ -164,37 +152,27 @@ void putInList(t_block **tempList, size_t size, void *ptr)
   }
   else
   {
-  	printf("b3..\n");
     tmp->isHead = false;
     tmp->next = *tempList;
     if (tmp->next)
       tmp->next->prev = tmp;
   }
-  printf("b4..\n");
   *tempList = tmp;
-  printf("b5..\n");
   makeCircle(tempList); 
-  printf("b6..\n");
 }
 
 void makeCircle(t_block **tempList)
 {
   t_block *tmp;
-	printf("c0..\n");
   tmp = *tempList;
-  printf("c1..\n");
   while ((*tempList)->isHead != true)
   {
-  	printf("cloop..");
     (*tempList) = (*tempList)->next;
   }
-  printf("c2..\n");
   (*tempList)->next = tmp;
   (*tempList)->next->prev = *tempList;
-  printf("c3..\n");
   while ((*tempList) != tmp)
     *tempList = (*tempList)->next;
-  printf("c4..\n");
 }
 
 void reInitList()
