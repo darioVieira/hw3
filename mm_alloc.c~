@@ -1,0 +1,214 @@
+#include "mm_alloc.h"
+#include <stdlib.h>
+#include <stdbool.h>
+
+/* block struct */
+
+
+t_block *list;
+
+void* mm_malloc(size_t size)//recieves size of memory to be allocated
+{
+	void* ptr;
+  static bool first = true;//to maintain the value
+	printf("a0..\n");
+  if (size == 0)//catch 
+    return (NULL);
+  printf("a1..\n");
+  ptr = findBlock(size);
+  printf("a2..\n");
+  if (ptr != NULL)// found an element that fits size
+  {
+  	printf("a3..\n");
+    reInitList();
+    return (ptr);
+  }
+  printf("a4..\n");
+  ptr = sbrk(size);//if not... create a new element in the list
+  if (ptr == (void *)-1)//if no such size exists... force quit like edge after a few tabs
+  {
+    printf("Error : sbrk() failed\n");
+    return (NULL);
+  }
+  printf("a5..\n");
+  if (first)//first time mm_alloc has been called
+  {
+    list = NULL;
+    printf("a6..\n");
+    first=false;
+  }
+  printf("a7..\n");
+  putInList(&list, size, ptr);
+  printf("a8..\n");
+  return (ptr);
+}
+
+void *findBlock(size_t size)
+{
+  if (list == NULL)
+    return (NULL);
+  if (list->free == true && size <= list->size)//if current item in list is big enough
+  {
+    list->free = false;
+    return (list->ptr);
+  }
+  while(list->isHead != true)// look through list for item that is big enough
+  {
+    if (list->free == true && size <= list->size)//check each list item
+    {
+      list->free = false;
+      return (list->ptr);
+    }
+    list = list->next;
+  }
+  reInitList();//reset the list to the begining of the circle
+  return (NULL);
+}
+
+void *mm_realloc(void* ptr, size_t size)
+{
+	void* cpy;
+  size_t ptrSize;
+
+  if (size == 0 && ptr != NULL)
+  {
+    free(ptr);
+    return (ptr);
+  }
+  else if (ptr == NULL || isInList(ptr) == false)//if ptr==null || not in list
+    ptr = malloc(size);
+  else//ptr !=NULL, size>0, it is on the list
+  {
+  	t_block* tmp;
+		tmp = list;
+		while (tmp->ptr != ptr)
+			tmp = tmp->next;
+		ptrSize =tmp->size;
+		
+    
+    if (ptrSize == size)
+      return (ptr);
+    cpy = malloc(size);
+    if (size < ptrSize)
+      memcpy(cpy, ptr, size);
+    else
+      memcpy(cpy, ptr, ptrSize);
+    free(ptr);
+    return (cpy);
+  }
+  return (ptr);
+
+}
+
+bool isInList(void *ptr)
+{
+  t_block* tmp;
+
+  tmp = list;
+  while (tmp->ptr != ptr && tmp->isHead != true)
+    tmp = tmp->next;
+  if (tmp->ptr != ptr)
+    return (false);
+  return (true);
+}
+
+void mm_free(void* ptr)
+{
+	if (ptr == NULL)//catch for shnaai
+    return ;
+  if (isInList(ptr) == true)//confirming that it actually exists
+    return ;
+  while (ptr != list->ptr && list->isHead != true)
+    list = list->next;
+  if (list->free == true)
+    return ;
+  list->free = true;
+  if (list->isHead != true)
+  {
+    if (list->next->free == true && list->next->ptr != list->ptr)
+    {
+  	  if (list->ptr > list->next->ptr)
+        list->ptr = list->next->ptr;
+      list->isHead = list->next->isHead;
+      list->size += list->next->size;
+      list->next = list->next->next;
+    }
+  }
+  reInitList();
+}
+
+
+void putInList(t_block **tempList, size_t size, void *ptr)
+{
+	printf("b0..\n");
+  t_block *tmp= sbrk(sizeof(*tmp));
+  if (tmp == (void *)-1)//catch sbrk failure
+  {
+    printf("Error : sbrk() failed\n");
+    return ;
+  }
+  printf("b1..\n");
+  tmp->size = size;
+  tmp->free = false;
+  tmp->ptr = ptr;
+  printf("b2..\n");
+  if (*tempList == NULL)
+  {
+  	
+    tmp->isHead = true;
+  }
+  else
+  {
+  	printf("b3..\n");
+    tmp->isHead = false;
+    tmp->next = *tempList;
+    if (tmp->next)
+      tmp->next->prev = tmp;
+  }
+  printf("b4..\n");
+  *tempList = tmp;
+  printf("b5..\n");
+  makeCircle(tempList); 
+  printf("b6..\n");
+}
+
+void makeCircle(t_block **tempList)
+{
+  t_block *tmp;
+	printf("c0..\n");
+  tmp = *tempList;
+  printf("c1..\n");
+  while ((*tempList)->isHead != true)
+  {
+  	printf("cloop..");
+    (*tempList) = (*tempList)->next;
+  }
+  printf("c2..\n");
+  (*tempList)->next = tmp;
+  (*tempList)->next->prev = *tempList;
+  printf("c3..\n");
+  while ((*tempList) != tmp)
+    *tempList = (*tempList)->next;
+  printf("c4..\n");
+}
+
+void reInitList()
+{
+  while (list->isHead != true)
+    list = list->next;
+  list = list->next;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
